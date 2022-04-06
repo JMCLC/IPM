@@ -78,7 +78,7 @@ function draw()
     let y = map(mouseY, inputArea.y, inputArea.y + inputArea.h, 0, height)
 
     fill(color(255,255,255));
-    circle(x, y, 0.5 * PPCM);
+    circle(x, y, 0.4 * PPCM);
   }
 }
 
@@ -165,23 +165,24 @@ function mousePressed()
       current_trial++;                 // Move on to the next trial/target
     }
 
-    // Check if the user has completed all 54 trials
-    if (current_trial === trials.length)
-    {
-      testEndTime = millis();
-      draw_targets = false;          // Stop showing targets and the user performance results
-      printAndSavePerformance();     // Print the user's results on-screen and send these to the DB
-      attempt++;                      
-      
-      // If there's an attempt to go create a button to start this
-      if (attempt < 2)
-      {
-        continue_button = createButton('START 2ND ATTEMPT');
-        continue_button.mouseReleased(continueTest);
-        continue_button.position(width/2 - continue_button.size().width/2, height/2 - continue_button.size().height/2);
-      }
-    } 
+   // Check if the user has completed all 54 trials
+if (current_trial === trials.length)
+{
+  testEndTime = millis();
+  draw_targets = false;          // Stop showing targets and the user performance results
+  printAndSavePerformance();     // Print the user's results on-screen and send these to the DB
+  attempt++;                      
+     
+  // If there's an attempt to go create a button to start this
+  if (attempt < 2)
+  {
+    continue_button = createButton('START 2ND ATTEMPT');
+    continue_button.mouseReleased(continueTest);
+    continue_button.position(width/2 -     continue_button.size().width/2, height/2 - continue_button.size().height/2);
   }
+}
+// Check if this was the first selection in an attempt
+else if (current_trial === 1) testStartTime = millis();  }
 }
 
 // Draw target on-screen
@@ -195,7 +196,7 @@ function drawTarget(i)
   { 
     // Highlights the target the user should be trying to select
     // with a white border
-    stroke(color(100,100,220));
+    stroke(color(255,0,0));
     strokeWeight(2);
     
     // Remember you are allowed to access targets (i-1) and (i+1)
@@ -213,29 +214,37 @@ function drawTarget(i)
 
       if (dist(target.x, target.y, virtual_x, virtual_y) < target.w/2)
       {
-        fill(color(0,255,0)); 
+        fill(color(255,0,0)); 
       }
       else if(trials[current_trial+1] === i){
-        fill(color(255,0,0)); 
+        fill(color(0,255,0)); 
       }
       else
       {
-          fill(color(0,0,255));   
+          fill(color(0,255,0));   
       }              
       circle(target.x, target.y, target.w);
-    
-      fill(color(0,0,255));   
-      circle((target.x-2*TARGET_SIZE)*2,target.y*2,target.w*3);
-    
+      if(trials[current_trial+1] === i){
+        fill(color(0,120,0)); 
+        circle(target.x, target.y,target.w/2);}
       stroke(color(255,0,0));
       strokeWeight(5);
       line(target.x,target.y, virtual_x,virtual_y);
     }
   else if(trials[current_trial+1] === i)
     {
+      
       if(trials[current_trial]!==i){
-        fill(color(0,194,255));                 
+        fill(color(0,120,0));                 
         circle(target.x, target.y, target.w);
+        for(let j = 0;j<18;j++){
+          let target2 = getTargetBounds(j); 
+          if(trials[current_trial] === j){
+            stroke(color(0,120,0));
+            strokeWeight(5);
+            line(target.x,target.y, target2.x,target2.y);
+          }
+        }
       }
     }
   else{
