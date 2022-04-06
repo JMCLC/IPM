@@ -6,14 +6,17 @@
 // p5.js reference: https://p5js.org/reference/
 
 // Database (CHANGE THESE!)
-const GROUP_NUMBER   = 0;      // Add your group number here as an integer (e.g., 2, 3)
-const BAKE_OFF_DAY   = false;  // Set to 'true' before sharing during the bake-off day
+const GROUP_NUMBER   = 36;      // Add your group number here as an integer (e.g., 2, 3)
+const BAKE_OFF_DAY   = true;  // Set to 'true' before sharing during the bake-off day
 
 // Target and grid properties (DO NOT CHANGE!)
 let PPI, PPCM;
 let TARGET_SIZE;
 let TARGET_PADDING, MARGIN, LEFT_PADDING, TOP_PADDING;
 let continue_button;
+let lastX = 0;
+let lastY = 0;
+let current_distance = 0;
 let inputArea        = {x: 0, y: 0, h: 0, w: 0}    // Position and size of the user input area
 
 // Metrics
@@ -149,7 +152,13 @@ function mousePressed()
   if (draw_targets)
   {
     // Get the location and size of the target the user should be trying to select
-    let target = getTargetBounds(trials[current_trial]);   
+    let target = getTargetBounds(trials[current_trial]);
+    if(current_trial !== 0){
+      current_distance = dist(target.x,target.y,lastX,lastY);
+    }
+    else{
+      current_distance = -1;
+    }
     
     // Check to see if the virtual cursor is inside the target bounds,
     // increasing either the 'hits' or 'misses' counters
@@ -158,9 +167,21 @@ function mousePressed()
     {
       let virtual_x = map(mouseX, inputArea.x, inputArea.x + inputArea.w, 0, width)
       let virtual_y = map(mouseY, inputArea.y, inputArea.y + inputArea.h, 0, height)
-
-      if (dist(target.x, target.y, virtual_x, virtual_y) < target.w/2) hits++;
-      else misses++;
+      lastX = virtual_x;
+      lastY = virtual_y;
+      if (dist(target.x, target.y, virtual_x, virtual_y) < target.w/2){ 
+        hits++;
+        if(current_distance === -1){
+          append(fitts_IDs,"---");
+        }      
+        append(fitts_IDs,Math.log2(current_distance/(target.w+1)));
+      }
+      else{
+        misses++;
+        append(fitts_IDs,-1);
+      }
+      
+      
       
       current_trial++;                 // Move on to the next trial/target
     }
@@ -229,6 +250,7 @@ function drawTarget(i)
         circle(target.x, target.y,target.w/2);}
       stroke(color(255,0,0));
       strokeWeight(5);
+      
       line(target.x,target.y, virtual_x,virtual_y);
     }
   else if(trials[current_trial+1] === i)
