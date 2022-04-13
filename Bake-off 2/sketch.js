@@ -7,7 +7,7 @@
 
 // Database (CHANGE THESE!)
 const GROUP_NUMBER   = 36;      // Add your group number here as an integer (e.g., 2, 3)
-const BAKE_OFF_DAY   = true;  // Set to 'true' before sharing during the bake-off day
+const BAKE_OFF_DAY   = false;  // Set to 'true' before sharing during the bake-off day
 
 // Target and grid properties (DO NOT CHANGE!)
 let PPI, PPCM;
@@ -79,6 +79,28 @@ function draw()
     // Draw the virtual cursor
     let x = map(mouseX, inputArea.x, inputArea.x + inputArea.w, 0, width)
     let y = map(mouseY, inputArea.y, inputArea.y + inputArea.h, 0, height)
+    
+    let error = -1;
+      let X1 = 0;
+      let Y1 = 0;
+      for(let j = 0;j<trials.length;j++){
+        let target = getTargetBounds(j);
+        if(error === -1){
+          error = dist(x,y,target.x,target.y);
+          X1 = target.x;
+          Y1 = target.y;
+        }
+        else{
+          if(error > dist(x,y,target.x,target.y)){
+            error = dist(x,y,target.x,target.y)
+            X1 = target.x;
+            Y1 = target.y;
+          }
+        }
+      }
+    
+    x = X1;
+    y = Y1;
 
     fill(color(255,255,255));
     circle(x, y, 0.4 * PPCM);
@@ -167,12 +189,33 @@ function mousePressed()
     {
       let virtual_x = map(mouseX, inputArea.x, inputArea.x + inputArea.w, 0, width)
       let virtual_y = map(mouseY, inputArea.y, inputArea.y + inputArea.h, 0, height)
+      
+      let error = -1;
+      let X1 = 0;
+      let Y1 = 0;
+      for(let j = 0;j<trials.length;j++){
+        let target = getTargetBounds(j);
+        if(error === -1){
+          error = dist(virtual_x,virtual_y,target.x,target.y);
+          X1 = target.x;
+          Y1 = target.y;
+        }
+        else{
+          if(error > dist(virtual_x,virtual_y,target.x,target.y)){
+            error = dist(virtual_x,virtual_y,target.x,target.y)
+            X1 = target.x;
+            Y1 = target.y;
+          }
+        }
+      }
+    
+      
       lastX = virtual_x;
       lastY = virtual_y;
-      if (dist(target.x, target.y, virtual_x, virtual_y) < target.w/2){ 
+      if (dist(target.x, target.y, X1, Y1) < target.w/2){ 
         hits++;
         if(current_distance === -1){
-          append(fitts_IDs,"---");
+          append(fitts_IDs,0);
         }      
         append(fitts_IDs,Math.log2(current_distance/(target.w+1)));
       }
@@ -232,8 +275,27 @@ function drawTarget(i)
   if(trials[current_trial] === i){
       let virtual_x = map(mouseX, inputArea.x, inputArea.x + inputArea.w, 0, width)
       let virtual_y = map(mouseY, inputArea.y, inputArea.y + inputArea.h, 0, height)
-
-      if (dist(target.x, target.y, virtual_x, virtual_y) < target.w/2)
+      
+      let error = -1;
+        let X1 = 0;
+        let Y1 = 0;
+          for(let j = 0;j<trials.length;j++){
+            let target = getTargetBounds(j);
+            if(error === -1){
+              error = dist(virtual_x,virtual_y,target.x,target.y);
+              X1 = target.x;
+              Y1 = target.y;
+            }
+            else{
+              if(error > dist(virtual_x,virtual_y,target.x,target.y)){
+                error = dist(virtual_x,virtual_y,target.x,target.y);
+                X1 = target.x;
+                Y1 = target.y;
+              }
+            }
+          }
+      
+      if (dist(target.x, target.y, X1, Y1) < target.w/2)
       {
         fill(color(255,0,0)); 
       }
@@ -250,12 +312,11 @@ function drawTarget(i)
         circle(target.x, target.y,target.w/2);}
       stroke(color(255,0,0));
       strokeWeight(5);
-      
-      line(target.x,target.y, virtual_x,virtual_y);
+      let target3 = getTargetBounds(trials[current_trial-1]);
+      line(target.x,target.y,X1,Y1);
     }
   else if(trials[current_trial+1] === i)
     {
-      
       if(trials[current_trial]!==i){
         fill(color(0,120,0));                 
         circle(target.x, target.y, target.w);
