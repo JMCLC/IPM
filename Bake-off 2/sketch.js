@@ -7,7 +7,7 @@
 
 // Database (CHANGE THESE!)
 const GROUP_NUMBER   = 36;      // Add your group number here as an integer (e.g., 2, 3)
-const BAKE_OFF_DAY   = false;  // Set to 'true' before sharing during the bake-off day
+const BAKE_OFF_DAY   = true;  // Set to 'true' before sharing during the bake-off day
 
 // Target and grid properties (DO NOT CHANGE!)
 let PPI, PPCM;
@@ -161,8 +161,8 @@ function printAndSavePerformance()
     }
     
     // Add user performance results
-    let db_ref = database.ref('G' + GROUP_NUMBER);
-    db_ref.push(attempt_data);
+    let db_ref = database.ref('G' + GROUP_NUMBER + '-AL');
+    append(db_ref,attempt_data);
   }
 }
 
@@ -216,8 +216,10 @@ function mousePressed()
         hits++;
         if(current_distance === -1){
           append(fitts_IDs,0);
-        }      
-        append(fitts_IDs,Math.log2(current_distance/(target.w+1)));
+        }
+        else{
+           append(fitts_IDs,Math.log2(current_distance/(target.w+1))); 
+        }
       }
       else{
         misses++;
@@ -255,6 +257,9 @@ function drawTarget(i)
   // Get the location and size for target (i)
   let target = getTargetBounds(i);             
 
+  let inn = 0;
+  
+  
   // Check whether this target is the target the user should be trying to select
   if (trials[current_trial] === i) 
   { 
@@ -297,6 +302,7 @@ function drawTarget(i)
       
       if (dist(target.x, target.y, X1, Y1) < target.w/2)
       {
+        inn = 1;
         fill(color(255,0,0)); 
       }
       else if(trials[current_trial+1] === i){
@@ -333,6 +339,35 @@ function drawTarget(i)
   else{
     fill(color(155,155,155));                 
     circle(target.x, target.y, target.w);
+  }
+  
+  let targetDist1 = getTargetBounds(0);
+  let targetDist2 = getTargetBounds(1);
+  
+  let target_x_real_1 = map(targetDist1.x, 0,width,inputArea.x, inputArea.x + inputArea.w)
+  let target_y_real_1 = map(targetDist1.y, 0,height,inputArea.y, inputArea.y + inputArea.h)
+  let target_x_real_2 = map(targetDist2.x, 0,width,inputArea.x, inputArea.x + inputArea.w)
+  let target_y_real_2 = map(targetDist2.y, 0,height,inputArea.y, inputArea.y + inputArea.h)
+  
+  let distancia = dist(target_x_real_1,target_y_real_1,target_x_real_2,target_y_real_2);
+  
+  let current_target_x = map(target.x, 0,width,inputArea.x, inputArea.x + inputArea.w)
+  let current_target_y = map(target.y, 0,height,inputArea.y, inputArea.y + inputArea.h)
+  if (inn === 1){
+    fill(color(255,0,0)); 
+    rect(current_target_x - distancia/2, current_target_y - distancia/2, distancia,distancia);
+  }
+  else if(trials[current_trial] === i){
+    fill(color(0,255,0));
+    rect(current_target_x - distancia/2, current_target_y - distancia/2, distancia,distancia);
+    if(trials[current_trial + 1] === i){
+      fill(color(0,120,0));
+      noStroke();
+      rect(current_target_x - distancia/4, current_target_y - distancia/4, distancia/2,distancia/2);
+    }
+  }
+  else{
+    rect(current_target_x - distancia/2, current_target_y - distancia/2, distancia,distancia);
   }
 }
 
