@@ -6,8 +6,8 @@
 // p5.js reference: https://p5js.org/reference/
 
 // Database (CHANGE THESE!)
-const GROUP_NUMBER   = 36;      // Add your group number here as an integer (e.g., 2, 3)
-const BAKE_OFF_DAY   = true;  // Set to 'true' before sharing during the bake-off day
+const GROUP_NUMBER   = "36-AL";      // Add your group number here as an integer (e.g., 2, 3)
+const BAKE_OFF_DAY   = false;  // Set to 'true' before sharing during the bake-off day
 
 // Target and grid properties (DO NOT CHANGE!)
 let PPI, PPCM;
@@ -76,34 +76,36 @@ function draw()
     // Draw the user input area
     drawInputArea()
 
-    // Draw the virtual cursor
-    let x = map(mouseX, inputArea.x, inputArea.x + inputArea.w, 0, width)
-    let y = map(mouseY, inputArea.y, inputArea.y + inputArea.h, 0, height)
+    fill(color(0,255,0));
+    stroke(color(255,0,0));
+    strokeWeight(2);
+    circle(inputArea.x + TARGET_SIZE/2, inputArea.y - PPCM - ((5 * TARGET_SIZE)/4) * 2, TARGET_SIZE);
+    noStroke()
+    fill(color(0,120,0));
+    circle(inputArea.x + TARGET_SIZE/2, inputArea.y - PPCM - (5 * TARGET_SIZE)/4 , TARGET_SIZE);
     
-    let error = -1;
-      let X1 = 0;
-      let Y1 = 0;
-      for(let j = 0;j<trials.length;j++){
-        let target = getTargetBounds(j);
-        if(error === -1){
-          error = dist(x,y,target.x,target.y);
-          X1 = target.x;
-          Y1 = target.y;
-        }
-        else{
-          if(error > dist(x,y,target.x,target.y)){
-            error = dist(x,y,target.x,target.y)
-            X1 = target.x;
-            Y1 = target.y;
-          }
-        }
-      }
+    fill(color(0,255,0));
+    stroke(color(255,0,0));
+    strokeWeight(2);
+    circle(inputArea.x + TARGET_SIZE/2, inputArea.y - PPCM, TARGET_SIZE);
+    fill(color(0,120,0));
+    circle(inputArea.x + TARGET_SIZE/2, inputArea.y - PPCM, TARGET_SIZE/2);
+    noStroke()
     
-    x = X1;
-    y = Y1;
+    
+    fill(color(255,255,255))
+    text("Alvo atual", inputArea.x + TARGET_SIZE + PPCM/5, inputArea.y - PPCM - ((5 * TARGET_SIZE)/4) * 2)
+    text("Próximo Alvo", inputArea.x + TARGET_SIZE + PPCM/5, inputArea.y - PPCM - (5 * TARGET_SIZE)/4)
+    text("Atual e Próximo Alvo", inputArea.x + TARGET_SIZE + PPCM/5, inputArea.y - PPCM)
+    text("TIP: Utilize o retângulo.", inputArea.x, inputArea.y + inputArea.h + PPCM/2)
 
+    // Draw the virtual cursor
+    let coords = getSquare();
+    let x = coords[0];
+    let y = coords[1];
     fill(color(255,255,255));
-    circle(x, y, 0.4 * PPCM);
+    circle(x,y, 0.4 * PPCM);
+
   }
 }
 
@@ -121,7 +123,6 @@ function printAndSavePerformance()
   background(color(0,0,0));   // clears screen
   fill(color(255,255,255));   // set text fill color to white
   text(timestamp, 10, 20);    // display time on screen (top-left corner)
-  
   textAlign(CENTER);
   text("Attempt " + (attempt + 1) + " out of 2 completed!", width/2, 60); 
   text("Hits: " + hits, width/2, 100);
@@ -133,6 +134,21 @@ function printAndSavePerformance()
   
   // Print Fitts IDS (one per target, -1 if failed selection, optional)
   // 
+    text("Target " + 1 + ": ---", width/5, 75);
+  for (var i = 1; i < trials.length/2; i++) {
+    if (fitts_IDs[i] === -1)
+      text("Target " + (i+1) + ": MISSED", width/5, 75 + 22*i);
+    else
+      text("Target " + (i+1) + ": " + fitts_IDs[i], width/5, 75 + 22*i);
+  }
+  i = 0;
+  for (var j = trials.length/2; j < trials.length; j++) {
+    if (fitts_IDs[j] === -1)
+      text("Target " + (j+1) + ": MISSED", (4*width)/5, 75 + 22*i);
+    else
+      text("Target " + (j+1) + ": " + fitts_IDs[j], (4*width)/5, 75 + 22*i);
+    i++;
+  }
 
   // Saves results (DO NOT CHANGE!)
   let attempt_data = 
@@ -161,7 +177,7 @@ function printAndSavePerformance()
     }
     
     // Add user performance results
-    let db_ref = database.ref('G' + GROUP_NUMBER + '-AL');
+    let db_ref = database.ref('G' + GROUP_NUMBER);
     append(db_ref,attempt_data);
   }
 }
@@ -187,46 +203,26 @@ function mousePressed()
         
     if (insideInputArea(mouseX, mouseY))
     {
-      let virtual_x = map(mouseX, inputArea.x, inputArea.x + inputArea.w, 0, width)
-      let virtual_y = map(mouseY, inputArea.y, inputArea.y + inputArea.h, 0, height)
-      
-      let error = -1;
-      let X1 = 0;
-      let Y1 = 0;
-      for(let j = 0;j<trials.length;j++){
-        let target = getTargetBounds(j);
-        if(error === -1){
-          error = dist(virtual_x,virtual_y,target.x,target.y);
-          X1 = target.x;
-          Y1 = target.y;
-        }
-        else{
-          if(error > dist(virtual_x,virtual_y,target.x,target.y)){
-            error = dist(virtual_x,virtual_y,target.x,target.y)
-            X1 = target.x;
-            Y1 = target.y;
-          }
-        }
-      }
-    
+      let coords = getSquare();
+      let virtual_x = coords[0];
+      let virtual_y = coords[1];
       
       lastX = virtual_x;
       lastY = virtual_y;
-      if (dist(target.x, target.y, X1, Y1) < target.w/2){ 
+      
+      if (dist(target.x, target.y, virtual_x, virtual_y) < target.w/2){ 
         hits++;
         if(current_distance === -1){
           append(fitts_IDs,0);
         }
         else{
-           append(fitts_IDs,Math.log2(current_distance/(target.w+1))); 
+           append(fitts_IDs,Math.log2(current_distance/(target.w)+1));
         }
       }
       else{
         misses++;
         append(fitts_IDs,-1);
       }
-      
-      
       
       current_trial++;                 // Move on to the next trial/target
     }
@@ -274,101 +270,61 @@ function drawTarget(i)
   }
   // Does not draw a border if this is not the target the user
   // should be trying to select
-  else noStroke();          
+  else noStroke();
 
   // Draws the target
   if(trials[current_trial] === i){
-      let virtual_x = map(mouseX, inputArea.x, inputArea.x + inputArea.w, 0, width)
-      let virtual_y = map(mouseY, inputArea.y, inputArea.y + inputArea.h, 0, height)
-      
-      let error = -1;
-        let X1 = 0;
-        let Y1 = 0;
-          for(let j = 0;j<trials.length;j++){
-            let target = getTargetBounds(j);
-            if(error === -1){
-              error = dist(virtual_x,virtual_y,target.x,target.y);
-              X1 = target.x;
-              Y1 = target.y;
-            }
-            else{
-              if(error > dist(virtual_x,virtual_y,target.x,target.y)){
-                error = dist(virtual_x,virtual_y,target.x,target.y);
-                X1 = target.x;
-                Y1 = target.y;
-              }
-            }
-          }
-      
-      if (dist(target.x, target.y, X1, Y1) < target.w/2)
-      {
-        inn = 1;
-        fill(color(255,0,0)); 
-      }
-      else if(trials[current_trial+1] === i){
-        fill(color(0,255,0)); 
-      }
-      else
-      {
-          fill(color(0,255,0));   
-      }              
-      circle(target.x, target.y, target.w);
-      if(trials[current_trial+1] === i){
-        fill(color(0,120,0)); 
-        circle(target.x, target.y,target.w/2);}
-      stroke(color(255,0,0));
-      strokeWeight(5);
-      let target3 = getTargetBounds(trials[current_trial-1]);
-      line(target.x,target.y,X1,Y1);
+    let coords = getSquare();
+    let virtual_x = coords[0];
+    let virtual_y = coords[1];
+    if (dist(target.x, target.y, virtual_x, virtual_y) < target.w/2){
+      inn = 1;
+      fill(color(255,0,0)); 
     }
+    else{
+      fill(color(0,255,0));   
+    }              
+    circle(target.x, target.y, target.w);
+    if(trials[current_trial+1] === i){
+      fill(color(0,120,0)); 
+      circle(target.x, target.y,target.w/2);
+    }
+    stroke(color(255,0,0));
+    strokeWeight(5);
+  }
   else if(trials[current_trial+1] === i)
     {
       if(trials[current_trial]!==i){
         fill(color(0,120,0));                 
         circle(target.x, target.y, target.w);
-        for(let j = 0;j<18;j++){
-          let target2 = getTargetBounds(j); 
-          if(trials[current_trial] === j){
-            stroke(color(0,120,0));
-            strokeWeight(5);
-            line(target.x,target.y, target2.x,target2.y);
-          }
-        }
       }
     }
   else{
     fill(color(155,155,155));                 
     circle(target.x, target.y, target.w);
   }
-  
-  let targetDist1 = getTargetBounds(0);
-  let targetDist2 = getTargetBounds(1);
-  
-  let target_x_real_1 = map(targetDist1.x, 0,width,inputArea.x, inputArea.x + inputArea.w)
-  let target_y_real_1 = map(targetDist1.y, 0,height,inputArea.y, inputArea.y + inputArea.h)
-  let target_x_real_2 = map(targetDist2.x, 0,width,inputArea.x, inputArea.x + inputArea.w)
-  let target_y_real_2 = map(targetDist2.y, 0,height,inputArea.y, inputArea.y + inputArea.h)
-  
-  let distancia = dist(target_x_real_1,target_y_real_1,target_x_real_2,target_y_real_2);
-  
-  let current_target_x = map(target.x, 0,width,inputArea.x, inputArea.x + inputArea.w)
-  let current_target_y = map(target.y, 0,height,inputArea.y, inputArea.y + inputArea.h)
+  let distancia = real_distance();
+  current_target = getRealXY(target.x,target.y);
+  strokeWeight(2);
   if (inn === 1){
     fill(color(255,0,0)); 
-    rect(current_target_x - distancia/2, current_target_y - distancia/2, distancia,distancia);
+    rect(current_target[0] - distancia/2, current_target[1] - distancia/2, distancia,distancia);
   }
   else if(trials[current_trial] === i){
     fill(color(0,255,0));
-    rect(current_target_x - distancia/2, current_target_y - distancia/2, distancia,distancia);
+    rect(current_target[0] - distancia/2, current_target[1] - distancia/2, distancia,distancia);
     if(trials[current_trial + 1] === i){
       fill(color(0,120,0));
       noStroke();
-      rect(current_target_x - distancia/4, current_target_y - distancia/4, distancia/2,distancia/2);
+      rect(current_target[0] - distancia/4, current_target[1] - distancia/4, distancia/2,distancia/2);
     }
   }
   else{
-    rect(current_target_x - distancia/2, current_target_y - distancia/2, distancia,distancia);
+    stroke(color(0,0,0));
+    rect(current_target[0] - distancia/2, current_target[1] - distancia/2, distancia,distancia);
   }
+  strokeWeight(5);
+  drawLines();
 }
 
 // Returns the location and size of a given target
@@ -439,4 +395,74 @@ function drawInputArea()
   strokeWeight(2);
   
   rect(inputArea.x, inputArea.y, inputArea.w, inputArea.h);
+}
+
+
+//Function that calculates the position of a XY pair in the input area
+
+function getRealXY(X_virtual, Y_virtual){
+  X_real = map(X_virtual, 0,width,inputArea.x, inputArea.x + inputArea.w);
+  Y_real = map(Y_virtual, 0,width,inputArea.y, inputArea.y + inputArea.w);
+  return [X_real,Y_real];
+}
+
+
+//Function that calculates the position of the virtual cursor after snapping
+
+function getSquare(){
+  let targetDist1 = getTargetBounds(0);
+  let targetDist2 = getTargetBounds(1);
+  
+  let distancia = real_distance();
+  
+  let erro = -1;
+  let close_target;
+  
+  for(let i = 0;i<18;i++){
+    target = getTargetBounds(i);
+    real_target = getRealXY(target.x,target.y);
+    if(erro === -1){
+      erro = dist(mouseX,mouseY,real_target[0],real_target[1]);
+      close_target = target;
+    }
+    if(erro > dist(mouseX,mouseY,real_target[0],real_target[1])){
+      erro = dist(mouseX,mouseY,real_target[0],real_target[1]);
+      close_target = target;
+    }
+  }
+  return [close_target.x,close_target.y];
+}
+
+
+//This function draws all the lines in the screen
+//2 on the virtual screen:
+//virtual mouse -> current target
+//current target -> next target
+//1 on the input screen:
+//mouse position -> position of target on the input area where the virtual cursor would be snapped to the center of the current target
+
+function drawLines(){
+  current_target = getTargetBounds(trials[current_trial]);
+  next_target = current_target;
+  if(current_trial < 53){
+    next_target = getTargetBounds(trials[current_trial+1]);
+  }
+  realTarget = getRealXY(current_target.x,current_target.y);
+  stroke(color(255,0,0));
+  strokeWeight(2);
+  line(mouseX,mouseY,realTarget[0],realTarget[1]);
+  coords = getSquare();
+  strokeWeight(5);
+  line(current_target.x,current_target.y,coords[0],coords[1]);
+  stroke(color(0,120,0));
+  line(current_target.x,current_target.y,next_target.x,next_target.y);
+}
+
+function real_distance(){
+  let targetDist1 = getTargetBounds(0);
+  let targetDist2 = getTargetBounds(1);
+  
+  real_target_1 = getRealXY(targetDist1.x,targetDist1.y);
+  real_target_2 = getRealXY(targetDist2.x,targetDist2.y);
+  return dist(real_target_1[0], real_target_1[1], real_target_2[0], real_target_2[1]);
 }
